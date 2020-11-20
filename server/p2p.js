@@ -1,6 +1,8 @@
 const TCP = require('libp2p-tcp');
 const Websockets = require('libp2p-websockets');
 const WebRTCStar = require('libp2p-webrtc-star');
+const process = require('process');
+const PeerId = require('peer-id');
 
 const wrtc = require('wrtc');
 
@@ -10,9 +12,13 @@ const Mplex = require('libp2p-mplex');
 
 const { NOISE } = require('libp2p-noise');
 
+const SignalProtocol = require('./signal-protocol');
+
 const Libp2p = require('libp2p');
 
 const main = async () => {
+  const idListener = await 
+
   const libp2p = await Libp2p.create({
     addresses: {
       listen: [
@@ -23,8 +29,9 @@ const main = async () => {
     },
     modules: {
       transport: [TCP, Websockets, WebRTCStar],
-      streamMuxe: [Mplex],
-      connEncryption: [NOISE]
+      streamMuxer: [Mplex],
+      connEncryption: [NOISE],
+      peerDiscover: []
     },
     config: {
       transport: {
@@ -39,6 +46,8 @@ const main = async () => {
     console.info(`Connected to ${connection.remotePeer.toB58String()}`);
   });
 
+  libp2p.handle(SignalProtocol.PROTOCOL, SignalProtocol.handler);
+
   await libp2p.start();
 
   console.info(`${libp2p.peerId.toB58String()} listening on addresses:`);
@@ -46,6 +55,28 @@ const main = async () => {
     libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'),
     '\n'
   );
+
+  process.stdin.on('data', (message) => {
+    message = message.slice(0, -1);
+    libp2p.peerStore.peers.forEach(async (peerData) => {
+      if (!peerData.protocols.includes(SignalProtocol.PROTOCOL)) return;
+
+      const connection = libp2p.connectionManager.get(peerData.id);
+      if (!connection) return;
+
+      try {
+        const { stream } = await connection.newStream([
+          SignalProtocol.PROTOCOL
+        ]);
+        await SignalProtocol.send(message, stream);
+      } catch (err) {
+        console.error(
+          'Could not negotiate chat protocol stream with peer',
+          err
+        );
+      }
+    });
+  });
 
   const targetAddress = multiaddr(
     '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'

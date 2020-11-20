@@ -1,7 +1,7 @@
-const express = require('express')
-const cors = require('cors')
-const path = require('path')
-const p2p = require('./p2p')
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const p2p = require('./p2p');
 
 const app = express();
 p2p();
