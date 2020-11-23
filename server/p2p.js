@@ -5,7 +5,6 @@ const process = require('process');
 const PeerId = require('peer-id');
 const fs = require('fs');
 const generateKey = require('./generate_key');
-const NodeRSA = require('node-rsa');
 
 const wrtc = require('wrtc');
 

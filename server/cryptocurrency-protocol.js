@@ -1,5 +1,7 @@
 const pipe = require('it-pipe');
 const chalk = require('chalk');
+const PeerId = require('peer-id');
+const NodeRSA = require('node-rsa');
 
 const Blockchain = require('./Blockchain/Blockchain');
 const read_blockchain = require('./Blockchain/read_blockchain');
@@ -44,14 +46,31 @@ const ledger_send = async (message, stream) => {
 
 const TRANSACTION_PROTOCOL = '/cryptocurrency/transaction/1.0.0';
 
-const transaction_handler = async ({ stream }) => {
+const transaction_handler = async ({ connection, stream }) => {
   try {
     await pipe(stream, async (source) => {
       for await (const message of source) {
-        const blockchain = read_blockchain();
-        blockchain.add_new_transaction(JSON.parse(String(message)));
-        write_blockchain(blockchain);
-        console.log(chalk.yellowBright('New transaction loaded!'));
+        const transaction = JSON.parse(String(message));
+        try {
+          if (transaction.sender.id !== connection.remotePeer.toJSON().id)
+            throw Error();
+
+          PeerId.createFromJSON(transaction.sender);
+
+          const key = new NodeRSA(transaction.sender.pubKey);
+
+          const content = [...transaction];
+          delete content.signature;
+
+          if (!key.verify(content, transaction.signature)) throw Error();
+
+          const blockchain = read_blockchain();
+          blockchain.add_new_transaction(transaction);
+          write_blockchain(blockchain);
+          console.log(chalk.yellowBright('New transaction loaded!'));
+        } catch (err) {
+          console.log(chalk.red('Error loading transaction!'));
+        }
       }
     });
 
