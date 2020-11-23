@@ -3,6 +3,9 @@ const Websockets = require('libp2p-websockets');
 const WebRTCStar = require('libp2p-webrtc-star');
 const process = require('process');
 const PeerId = require('peer-id');
+const fs = require('fs');
+const generateKey = require('./generate_key');
+const NodeRSA = require('node-rsa');
 
 const wrtc = require('wrtc');
 
@@ -17,9 +20,14 @@ const SignalProtocol = require('./signal-protocol');
 const Libp2p = require('libp2p');
 
 const main = async () => {
-  const idListener = await 
+  if (!fs.existsSync('./peer-id.json')) {
+    await generateKey();
+  }
+
+  const id = await PeerId.createFromJSON(require('../peer-id.json'));
 
   const libp2p = await Libp2p.create({
+    peerId: id,
     addresses: {
       listen: [
         '/ip4/0.0.0.0/tcp/0',
