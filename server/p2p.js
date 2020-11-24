@@ -1,9 +1,9 @@
 const TCP = require('libp2p-tcp');
 const Websockets = require('libp2p-websockets');
 const WebRTCStar = require('libp2p-webrtc-star');
-const process = require('process');
 const PeerId = require('peer-id');
 const fs = require('fs');
+
 const generateKey = require('./generate_key');
 
 const wrtc = require('wrtc');
@@ -15,10 +15,15 @@ const Mplex = require('libp2p-mplex');
 const { NOISE } = require('libp2p-noise');
 
 const SignalProtocol = require('./signal-protocol');
+const CryptocurrencyProtocol = require('./cryptocurrency-protocol');
 
 const Libp2p = require('libp2p');
 
-const main = async () => {
+const sio = require('socket.io');
+
+const Transaction = require('./Blockchain/Transaction');
+
+const main = async (server) => {
   if (!fs.existsSync('./peer-id.json')) {
     await generateKey();
   }
@@ -53,7 +58,33 @@ const main = async () => {
     console.info(`Connected to ${connection.remotePeer.toB58String()}`);
   });
 
-  libp2p.handle(SignalProtocol.PROTOCOL, SignalProtocol.handler);
+  const handler = (arg) => {
+    const protocol = arg.protocol;
+
+    switch (protocol) {
+      case SignalProtocol.PROTOCOL:
+        SignalProtocol.handler(arg);
+        break;
+      case CryptocurrencyProtocol.ledger.PROTOCOL:
+        CryptocurrencyProtocol.ledger.handler(arg);
+        break;
+      case CryptocurrencyProtocol.transaction.PROTOCOL:
+        CryptocurrencyProtocol.transaction.handler(arg);
+        break;
+      default:
+        console.log('Protocol not supported');
+        break;
+    }
+  };
+
+  libp2p.handle(
+    [
+      SignalProtocol.PROTOCOL,
+      CryptocurrencyProtocol.ledger.PROTOCOL,
+      CryptocurrencyProtocol.transaction.PROTOCOL
+    ],
+    handler
+  );
 
   await libp2p.start();
 
@@ -63,25 +94,43 @@ const main = async () => {
     '\n'
   );
 
-  process.stdin.on('data', (message) => {
-    message = message.slice(0, -1);
-    libp2p.peerStore.peers.forEach(async (peerData) => {
-      if (!peerData.protocols.includes(SignalProtocol.PROTOCOL)) return;
+  const io = sio(server);
 
-      const connection = libp2p.connectionManager.get(peerData.id);
-      if (!connection) return;
+  io.on('connection', (socket) => {
+    socket.on('transaction', ({ receiver, amount }) => {
+      const sender = id.toJSON();
+      const privKey = sender.privKey;
+      delete sender.privKey;
+      const transaction = new Transaction(sender, receiver, amount);
+      transaction.sign(privKey);
 
-      try {
-        const { stream } = await connection.newStream([
-          SignalProtocol.PROTOCOL
-        ]);
-        await SignalProtocol.send(message, stream);
-      } catch (err) {
-        console.error(
-          'Could not negotiate chat protocol stream with peer',
-          err
-        );
-      }
+      libp2p.peerStore.peers.forEach(async (peerData) => {
+        if (
+          !peerData.protocols.includes(
+            CryptocurrencyProtocol.transaction.PROTOCOL
+          )
+        )
+          return;
+
+        const connection = libp2p.connectionManager.get(peerData.id);
+        if (!connection) return;
+
+        try {
+          const { stream } = await connection.newStream([
+            CryptocurrencyProtocol.transaction.PROTOCOL
+          ]);
+          await SignalProtocol.send(transaction.json, stream);
+        } catch (err) {
+          console.error(
+            'Could not negotiate chat protocol stream with peer',
+            err
+          );
+        }
+      });
+    });
+
+    socket.on('mine', () => {
+      // Begin mining using multithreading
     });
   });
 
