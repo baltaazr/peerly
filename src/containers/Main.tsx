@@ -1,18 +1,14 @@
-import React from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Typography } from 'antd';
+
+import { PeerContext } from '../context';
 
 export const Main = () => {
-  const history = useHistory();
+  const { peers } = useContext(PeerContext);
 
   return (
     <div>
-      <button
-        onClick={() => {
-          history.push('/chat');
-        }}
-      >
-        Chat
-      </button>
+      <Typography>Number of peers connected: {peers.length}</Typography>
     </div>
   );
 };
