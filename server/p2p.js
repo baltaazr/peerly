@@ -75,12 +75,6 @@ const main = async (server) => {
     handler
   );
 
-  console.info(`${libp2p.peerId.toB58String()} listening on addresses:`);
-  console.info(
-    libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'),
-    '\n'
-  );
-
   const io = sio(server);
 
   const checkPeer = ({ protocols }) => {
@@ -146,6 +140,12 @@ const main = async (server) => {
   });
 
   await libp2p.start();
+
+  console.info(`${libp2p.peerId.toB58String()} listening on addresses:`);
+  console.info(
+    libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'),
+    '\n'
+  );
 
   const targetAddress = multiaddr(
     '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
