@@ -39,7 +39,7 @@ const main = async (server) => {
       listen: [
         '/ip4/0.0.0.0/tcp/0',
         '/ip4/0.0.0.0/tcp/0/ws',
-        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+        '/ip4/104.214.189.57/tcp/9090/wss/p2p-webrtc-star'
       ]
     },
     modules: {
@@ -91,13 +91,13 @@ const main = async (server) => {
   const io = sio(server);
 
   const checkPeer = ({ protocols, id }, connected = true) => {
-    // if (!protocols) return false;
-    // if (
-    //   !protocols.includes(CryptocurrencyProtocol.transaction.PROTOCOL) ||
-    //   !protocols.includes(CryptocurrencyProtocol.ledger.PROTOCOL) ||
-    //   !protocols.includes(SignalProtocol.PROTOCOL)
-    // )
-    //   return false;
+    if (!protocols) return false;
+    if (
+      !protocols.includes(CryptocurrencyProtocol.transaction.PROTOCOL) ||
+      !protocols.includes(CryptocurrencyProtocol.ledger.PROTOCOL) ||
+      !protocols.includes(SignalProtocol.PROTOCOL)
+    )
+      return false;
 
     if (connected) {
       const connection = libp2p.connectionManager.get(id);
@@ -109,8 +109,6 @@ const main = async (server) => {
 
   // Listen for new connections to peers
   libp2p.connectionManager.on('peer:connect', (connection) => {
-    if (!checkPeer(connection.remotePeer, false)) return;
-
     const id = connection.remotePeer.toB58String();
     log(chalk.green(`🔌  Connected to ${chalk.white(id)}`));
     io.sockets.emit('peer:connect', connection.remotePeer.toJSON());
@@ -190,16 +188,6 @@ const main = async (server) => {
 
   info(`${libp2p.peerId.toB58String()} listening on addresses:`);
   info(libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'), '\n');
-
-  const targetAddress = multiaddr(
-    '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
-  );
-
-  try {
-    await libp2p.dial(targetAddress);
-  } catch (err) {
-    error(err);
-  }
 };
 
 module.exports = main;
