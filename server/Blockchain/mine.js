@@ -9,6 +9,6 @@ const log = console.log;
 const blockchain = read_blockchain();
 log(chalk.yellow('⛏  Mining...'));
 blockchain.mine();
-log(chalk.green('🧱  Block mined!'));
+log(chalk.green('✨  Block mined!'));
 write_blockchain(blockchain);
 parentPort.close();

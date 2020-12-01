@@ -36,7 +36,11 @@ const PeerContextProvider = ({
     });
 
     socket.current.on('peer:connect', (data: Peer) => {
-      setPeers((prevPeers) => [...prevPeers, data]);
+      setPeers((prevPeers) => {
+        const result = prevPeers.find(({ id }) => id === data.id);
+        if (result !== undefined) return prevPeers;
+        else return [...prevPeers, data];
+      });
     });
 
     socket.current.on('peer:disconnect', (data: string) => {

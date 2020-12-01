@@ -4,7 +4,6 @@ const WebRTCStar = require('libp2p-webrtc-star');
 const PeerId = require('peer-id');
 const fs = require('fs');
 const wrtc = require('wrtc');
-const multiaddr = require('multiaddr');
 const Mplex = require('libp2p-mplex');
 const { NOISE } = require('libp2p-noise');
 const Libp2p = require('libp2p');
@@ -162,9 +161,12 @@ const main = async (server) => {
       if (transactions.length === 0) {
         socket.emit('notification', 'No transactions to mine');
         return;
+      } else {
+        socket.emit('notification', 'Mining in progress');
       }
       worker = new Worker('./server/Blockchain/mine.js');
       worker.on('close', () => {
+        socket.emit('notification', 'Block has been successfully mined!');
         const blockchain = read_blockchain();
         libp2p.peerStore.peers.forEach(async (peerData) => {
           if (!checkPeer(peerData)) return;

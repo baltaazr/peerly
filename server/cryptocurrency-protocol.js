@@ -40,7 +40,7 @@ const ledger_handler = async ({ stream }) => {
 const ledger_send = async (message, stream) => {
   try {
     await pipe([message], stream, async () => {
-      log(chalk.yellowBright('Ledger sent!'));
+      log(chalk.yellowBright('📒  Ledger sent!'));
     });
   } catch (err) {
     error(err);
@@ -97,7 +97,10 @@ const transaction_handler = async ({ connection, stream }) => {
 const transaction_send = async (message, stream) => {
   try {
     await pipe([message], stream, async () => {
-      log(chalk.yellowBright('Transaction sent!'));
+      const blockchain = read_blockchain();
+      blockchain.add_new_transaction(JSON.parse(String(message)));
+      write_blockchain(blockchain);
+      log(chalk.yellowBright('💸  Transaction sent!'));
     });
   } catch (err) {
     error(err);
