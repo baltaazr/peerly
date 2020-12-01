@@ -160,9 +160,14 @@ const main = async (server) => {
     });
 
     socket.on('mine', () => {
-      worker = new Worker('./Blockchain/mine.js');
-      const blockchain = read_blockchain();
+      const transactions = read_blockchain().unconfirmed_transactions;
+      if (transactions.length === 0) {
+        socket.emit('notification', 'No transactions to mine');
+        return;
+      }
+      worker = new Worker('./server/Blockchain/mine.js');
       worker.on('close', () => {
+        const blockchain = read_blockchain();
         libp2p.peerStore.peers.forEach(async (peerData) => {
           if (!checkPeer(peerData)) return;
 

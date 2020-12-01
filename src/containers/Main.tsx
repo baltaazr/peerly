@@ -7,10 +7,16 @@ export const Main = () => {
   const [modal, setModal] = useState<
     { id: string; type: 'main' | 'transaction' } | undefined
   >(undefined);
-  const { peers, sendTransaction } = useContext(PeerContext);
+  const { peers, sendTransaction, mine } = useContext(PeerContext);
 
   return (
     <div style={{ width: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+      <Button
+        style={{ position: 'absolute', top: 10, left: 10 }}
+        onClick={mine}
+      >
+        Mine
+      </Button>
       <Typography>Number of peers connected: {peers.length}</Typography>
       <List
         itemLayout='horizontal'

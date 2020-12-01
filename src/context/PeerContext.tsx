@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { notification } from 'antd';
 
 export type Peer = {
   id: string;
@@ -8,11 +9,13 @@ export type Peer = {
 type PeerContextProps = {
   peers: Peer[];
   sendTransaction: (amount: number, receiver: string) => void;
+  mine: () => void;
 };
 
 export const PeerContext = React.createContext<PeerContextProps>({
   peers: [],
-  sendTransaction: (amount: number, receiver: string) => {}
+  sendTransaction: (amount: number, receiver: string) => {},
+  mine: () => {}
 });
 
 const PeerContextProvider = ({
@@ -39,14 +42,24 @@ const PeerContextProvider = ({
     socket.current.on('peer:disconnect', (data: string) => {
       setPeers((prevPeers) => prevPeers.filter(({ id }) => id !== data));
     });
+
+    socket.current.on('notification', (message: string) => {
+      notification.open({
+        message
+      });
+    });
   }, []);
 
   const sendTransaction = (amount: number, receiver: string) => {
     socket.current!.emit('transaction', { amount, receiver });
   };
 
+  const mine = () => {
+    socket.current!.emit('mine');
+  };
+
   return (
-    <PeerContext.Provider value={{ peers, sendTransaction }}>
+    <PeerContext.Provider value={{ peers, sendTransaction, mine }}>
       {children}
     </PeerContext.Provider>
   );

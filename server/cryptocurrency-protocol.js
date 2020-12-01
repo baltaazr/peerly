@@ -7,10 +7,10 @@ const Blockchain = require('./Blockchain/Blockchain');
 const read_blockchain = require('./Blockchain/read_blockchain');
 const write_blockchain = require('./Blockchain/write_blockchain');
 
-const LEDGER_PROTOCOL = '/cryptocurrency/ledger/1.0.0';
-
 const log = console.log;
 const error = console.error;
+
+const LEDGER_PROTOCOL = '/cryptocurrency/ledger/1.0.0';
 
 const ledger_handler = async ({ stream }) => {
   try {
@@ -25,7 +25,7 @@ const ledger_handler = async ({ stream }) => {
           blockchain.chain.length > currentBlockchain.chain.length
         ) {
           write_blockchain(blockchain);
-          log(chalk.yellowBright('New ledger loaded!'));
+          log(chalk.yellowBright('📒  New ledger loaded!'));
           //TO DO: Add mechanism to stop mining if in progress
         }
       }
@@ -75,7 +75,7 @@ const transaction_handler = async ({ connection, stream }) => {
           const blockchain = read_blockchain();
           blockchain.add_new_transaction(transaction);
           write_blockchain(blockchain);
-          log(chalk.yellowBright('New transaction loaded!'));
+          log(chalk.yellowBright('💸  New transaction loaded!'));
         } catch (err) {
           log(chalk.red('Error loading transaction!'));
         }
