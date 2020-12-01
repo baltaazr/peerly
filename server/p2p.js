@@ -3,17 +3,21 @@ const Websockets = require('libp2p-websockets');
 const WebRTCStar = require('libp2p-webrtc-star');
 const PeerId = require('peer-id');
 const fs = require('fs');
-const generateKey = require('./generate_key');
 const wrtc = require('wrtc');
 const multiaddr = require('multiaddr');
 const Mplex = require('libp2p-mplex');
 const { NOISE } = require('libp2p-noise');
-const SignalProtocol = require('./signal-protocol');
-const CryptocurrencyProtocol = require('./cryptocurrency-protocol');
 const Libp2p = require('libp2p');
 const sio = require('socket.io');
-const Transaction = require('./Blockchain/Transaction');
+const { Worker } = require('worker_threads');
 const chalk = require('chalk');
+
+const generateKey = require('./generate_key');
+const SignalProtocol = require('./signal-protocol');
+const CryptocurrencyProtocol = require('./cryptocurrency-protocol');
+const Transaction = require('./Blockchain/Transaction');
+const read_blockchain = require('./Blockchain/read_blockchain');
+
 const log = console.log;
 const error = console.error;
 const info = console.info;
@@ -53,6 +57,8 @@ const main = async (server) => {
     }
   });
 
+  let worker;
+
   const handler = (arg) => {
     const protocol = arg.protocol;
 
@@ -62,6 +68,7 @@ const main = async (server) => {
         break;
       case CryptocurrencyProtocol.ledger.PROTOCOL:
         CryptocurrencyProtocol.ledger.handler(arg);
+        if (worker) worker.terminate();
         break;
       case CryptocurrencyProtocol.transaction.PROTOCOL:
         CryptocurrencyProtocol.transaction.handler(arg);
@@ -105,20 +112,18 @@ const main = async (server) => {
     if (!checkPeer(connection.remotePeer, false)) return;
 
     const id = connection.remotePeer.toB58String();
-    log(chalk.green(`Connected to ${id}`));
+    log(chalk.green(`🔌  Connected to ${chalk.white(id)}`));
     io.sockets.emit('peer:connect', connection.remotePeer.toJSON());
   });
 
   // Listen for peers disconnecting
   libp2p.connectionManager.on('peer:disconnect', (connection) => {
     const id = connection.remotePeer.toB58String();
-    log(chalk.red(`Disconnected from ${id}`));
+    log(chalk.red(`❌  Disconnected from ${chalk.white(id)}`));
     io.sockets.emit('peer:disconnect', id);
   });
 
   io.on('connection', (socket) => {
-    log(chalk.blue('Socket connected'));
-
     const peers = [];
 
     libp2p.peerStore.peers.forEach((peerData) => {
@@ -144,7 +149,10 @@ const main = async (server) => {
           const { stream } = await connection.newStream([
             CryptocurrencyProtocol.transaction.PROTOCOL
           ]);
-          await SignalProtocol.send(transaction.json, stream);
+          await CryptocurrencyProtocol.transaction.send(
+            transaction.json,
+            stream
+          );
         } catch (err) {
           error('Could not negotiate chat protocol stream with peer', err);
         }
@@ -152,7 +160,24 @@ const main = async (server) => {
     });
 
     socket.on('mine', () => {
-      // Begin mining using multithreading
+      worker = new Worker('./Blockchain/mine.js');
+      const blockchain = read_blockchain();
+      worker.on('close', () => {
+        libp2p.peerStore.peers.forEach(async (peerData) => {
+          if (!checkPeer(peerData)) return;
+
+          const connection = libp2p.connectionManager.get(peerData.id);
+
+          try {
+            const { stream } = await connection.newStream([
+              CryptocurrencyProtocol.ledger.PROTOCOL
+            ]);
+            await CryptocurrencyProtocol.ledger.send(blockchain.json, stream);
+          } catch (err) {
+            error('Could not negotiate chat protocol stream with peer', err);
+          }
+        });
+      });
     });
   });
 
