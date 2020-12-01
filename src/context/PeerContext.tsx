@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import React, { useState, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 export type Peer = {
   id: string;
@@ -7,10 +7,12 @@ export type Peer = {
 
 type PeerContextProps = {
   peers: Peer[];
+  sendTransaction: (amount: number, receiver: string) => void;
 };
 
 export const PeerContext = React.createContext<PeerContextProps>({
-  peers: []
+  peers: [],
+  sendTransaction: (amount: number, receiver: string) => {}
 });
 
 const PeerContextProvider = ({
@@ -19,25 +21,32 @@ const PeerContextProvider = ({
   children: React.ReactNode | React.ReactNode[];
 }) => {
   const [peers, setPeers] = useState<Peer[]>([]);
+  const socket = useRef<Socket | undefined>(undefined);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000', {
+    socket.current = io('http://localhost:5000', {
       transports: ['websocket']
     });
 
-    socket.on('peers', (data: Peer[]) => {
-      console.log(`setting peers ${data.length}`);
+    socket.current.on('peers', (data: Peer[]) => {
       setPeers(data);
     });
 
-    socket.on('peer', (data: Peer) => {
-      console.log(`new peer ${data.id}`);
+    socket.current.on('peer:connect', (data: Peer) => {
       setPeers((prevPeers) => [...prevPeers, data]);
+    });
+
+    socket.current.on('peer:disconnect', (data: string) => {
+      setPeers((prevPeers) => prevPeers.filter(({ id }) => id !== data));
     });
   }, []);
 
+  const sendTransaction = (amount: number, receiver: string) => {
+    socket.current!.emit('transaction', { amount, receiver });
+  };
+
   return (
-    <PeerContext.Provider value={{ peers: peers }}>
+    <PeerContext.Provider value={{ peers, sendTransaction }}>
       {children}
     </PeerContext.Provider>
   );

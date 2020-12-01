@@ -9,6 +9,9 @@ const write_blockchain = require('./Blockchain/write_blockchain');
 
 const LEDGER_PROTOCOL = '/cryptocurrency/ledger/1.0.0';
 
+const log = console.log;
+const error = console.error;
+
 const ledger_handler = async ({ stream }) => {
   try {
     await pipe(stream, async (source) => {
@@ -22,7 +25,7 @@ const ledger_handler = async ({ stream }) => {
           blockchain.chain.length > currentBlockchain.chain.length
         ) {
           write_blockchain(blockchain);
-          console.log(chalk.yellowBright('New ledger loaded!'));
+          log(chalk.yellowBright('New ledger loaded!'));
           //TO DO: Add mechanism to stop mining if in progress
         }
       }
@@ -30,17 +33,17 @@ const ledger_handler = async ({ stream }) => {
 
     await pipe([], stream);
   } catch (err) {
-    console.error(err);
+    error(err);
   }
 };
 
 const ledger_send = async (message, stream) => {
   try {
     await pipe([message], stream, async () => {
-      console.log(chalk.yellowBright('Ledger sent!'));
+      log(chalk.yellowBright('Ledger sent!'));
     });
   } catch (err) {
-    console.error(err);
+    error(err);
   }
 };
 
@@ -57,9 +60,14 @@ const transaction_handler = async ({ connection, stream }) => {
 
           PeerId.createFromJSON(transaction.sender);
 
-          const key = new NodeRSA(transaction.sender.pubKey);
+          const rsa = {
+            n: Buffer.from(connection.remotePeer.pubKey._key.n, 'base64'),
+            e: Buffer.from(connection.remotePeer.pubKey._key.e, 'base64')
+          };
+          const key = new NodeRSA();
+          key.importKey(rsa, 'components-public');
 
-          const content = [...transaction];
+          const content = { ...transaction };
           delete content.signature;
 
           if (!key.verify(content, transaction.signature)) throw Error();
@@ -67,26 +75,26 @@ const transaction_handler = async ({ connection, stream }) => {
           const blockchain = read_blockchain();
           blockchain.add_new_transaction(transaction);
           write_blockchain(blockchain);
-          console.log(chalk.yellowBright('New transaction loaded!'));
+          log(chalk.yellowBright('New transaction loaded!'));
         } catch (err) {
-          console.log(chalk.red('Error loading transaction!'));
+          log(chalk.red('Error loading transaction!'));
         }
       }
     });
 
     await pipe([], stream);
   } catch (err) {
-    console.error(err);
+    error(err);
   }
 };
 
 const transaction_send = async (message, stream) => {
   try {
     await pipe([message], stream, async () => {
-      console.log(chalk.yellowBright('Transaction sent!'));
+      log(chalk.yellowBright('Transaction sent!'));
     });
   } catch (err) {
-    console.error(err);
+    error(err);
   }
 };
 

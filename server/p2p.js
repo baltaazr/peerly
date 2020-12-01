@@ -15,6 +15,8 @@ const sio = require('socket.io');
 const Transaction = require('./Blockchain/Transaction');
 const chalk = require('chalk');
 const log = console.log;
+const error = console.error;
+const info = console.info;
 
 const main = async (server) => {
   if (!fs.existsSync('./peer-id.json')) {
@@ -23,8 +25,12 @@ const main = async (server) => {
 
   const peerId = await PeerId.createFromJSON(require('../peer-id.json'));
 
+  // Create our libp2p node
   const libp2p = await Libp2p.create({
     peerId,
+    // Add the signaling server address, along with our PeerId to our multiaddrs list
+    // libp2p will automatically attempt to dial to the signaling server so that it can
+    // receive inbound connections from other peers
     addresses: {
       listen: [
         '/ip4/0.0.0.0/tcp/0',
@@ -61,7 +67,7 @@ const main = async (server) => {
         CryptocurrencyProtocol.transaction.handler(arg);
         break;
       default:
-        console.error('Protocol not supported');
+        error('Protocol not supported');
         break;
     }
   };
@@ -77,7 +83,7 @@ const main = async (server) => {
 
   const io = sio(server);
 
-  const checkPeer = ({ protocols }) => {
+  const checkPeer = ({ protocols, id }, connected = true) => {
     // if (!protocols) return false;
     // if (
     //   !protocols.includes(CryptocurrencyProtocol.transaction.PROTOCOL) ||
@@ -85,15 +91,29 @@ const main = async (server) => {
     //   !protocols.includes(SignalProtocol.PROTOCOL)
     // )
     //   return false;
+
+    if (connected) {
+      const connection = libp2p.connectionManager.get(id);
+      if (!connection) return;
+    }
+
     return true;
   };
 
+  // Listen for new connections to peers
   libp2p.connectionManager.on('peer:connect', (connection) => {
-    if (!checkPeer(connection.remotePeer)) return;
+    if (!checkPeer(connection.remotePeer, false)) return;
 
     const id = connection.remotePeer.toB58String();
     log(chalk.green(`Connected to ${id}`));
-    io.sockets.emit('peer', connection.remotePeer.toJSON());
+    io.sockets.emit('peer:connect', connection.remotePeer.toJSON());
+  });
+
+  // Listen for peers disconnecting
+  libp2p.connectionManager.on('peer:disconnect', (connection) => {
+    const id = connection.remotePeer.toB58String();
+    log(chalk.red(`Disconnected from ${id}`));
+    io.sockets.emit('peer:disconnect', id);
   });
 
   io.on('connection', (socket) => {
@@ -102,23 +122,23 @@ const main = async (server) => {
     const peers = [];
 
     libp2p.peerStore.peers.forEach((peerData) => {
-      if (checkPeer(peerData)) peers.push(peerData);
+      if (!checkPeer(peerData)) return;
+
+      peers.push(peerData.id);
     });
 
     socket.emit('peers', peers);
 
     socket.on('transaction', ({ receiver, amount }) => {
       const sender = peerId.toJSON();
-      const privKey = sender.privKey;
       delete sender.privKey;
       const transaction = new Transaction(sender, receiver, amount);
-      transaction.sign(privKey);
+      transaction.sign(peerId.privKey._key);
 
       libp2p.peerStore.peers.forEach(async (peerData) => {
         if (!checkPeer(peerData)) return;
 
         const connection = libp2p.connectionManager.get(peerData.id);
-        if (!connection) return;
 
         try {
           const { stream } = await connection.newStream([
@@ -126,10 +146,7 @@ const main = async (server) => {
           ]);
           await SignalProtocol.send(transaction.json, stream);
         } catch (err) {
-          console.error(
-            'Could not negotiate chat protocol stream with peer',
-            err
-          );
+          error('Could not negotiate chat protocol stream with peer', err);
         }
       });
     });
@@ -141,11 +158,8 @@ const main = async (server) => {
 
   await libp2p.start();
 
-  console.info(`${libp2p.peerId.toB58String()} listening on addresses:`);
-  console.info(
-    libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'),
-    '\n'
-  );
+  info(`${libp2p.peerId.toB58String()} listening on addresses:`);
+  info(libp2p.multiaddrs.map((addr) => addr.toString()).join('\n'), '\n');
 
   const targetAddress = multiaddr(
     '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
@@ -154,7 +168,7 @@ const main = async (server) => {
   try {
     await libp2p.dial(targetAddress);
   } catch (err) {
-    console.error(err);
+    error(err);
   }
 };
 

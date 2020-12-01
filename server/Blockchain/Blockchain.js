@@ -78,6 +78,7 @@ class Blockchain {
         Check if block_hash is valid hash of block and satisfies
         the difficulty criteria.
         */
+    if (block.index === 0) return true;
     return block.compute_hash().startsWith('0'.repeat(Blockchain.difficulty));
   }
 

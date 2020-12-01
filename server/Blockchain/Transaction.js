@@ -12,7 +12,19 @@ class Transaction {
   }
 
   sign(privKey) {
-    const key = new NodeRSA(privKey);
+    const rsa = {
+      n: Buffer.from(privKey.n, 'base64'),
+      e: Buffer.from(privKey.e, 'base64'),
+      d: Buffer.from(privKey.d, 'base64'),
+      p: Buffer.from(privKey.p, 'base64'),
+      q: Buffer.from(privKey.q, 'base64'),
+      dmp1: Buffer.from(privKey.dp, 'base64'),
+      dmq1: Buffer.from(privKey.dq, 'base64'),
+      coeff: Buffer.from(privKey.qi, 'base64')
+    };
+
+    const key = new NodeRSA();
+    key.importKey(rsa, 'components');
     const signature = key.sign(this.json);
     this.signature = signature;
   }

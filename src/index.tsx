@@ -5,10 +5,8 @@ import App from './App';
 import { PeerContextProvider } from './context';
 
 ReactDOM.render(
-  <React.StrictMode>
-    <PeerContextProvider>
-      <App />
-    </PeerContextProvider>
-  </React.StrictMode>,
+  <PeerContextProvider>
+    <App />
+  </PeerContextProvider>,
   document.getElementById('root')
 );
