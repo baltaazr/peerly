@@ -55,7 +55,7 @@ const transaction_handler = async ({ connection, stream }) => {
       for await (const message of source) {
         const transaction = JSON.parse(String(message));
         try {
-          if (transaction.sender.id !== connection.remotePeer.toJSON().id)
+          if (transaction.sender.id !== connection.remotePeer.toB58String())
             throw Error();
 
           PeerId.createFromJSON(transaction.sender);
@@ -70,7 +70,13 @@ const transaction_handler = async ({ connection, stream }) => {
           const content = { ...transaction };
           delete content.signature;
 
-          if (!key.verify(content, transaction.signature)) throw Error();
+          if (
+            !key.verify(
+              JSON.stringify(content),
+              Buffer.from(transaction.signature)
+            )
+          )
+            throw Error();
 
           const blockchain = read_blockchain();
           blockchain.add_new_transaction(transaction);
