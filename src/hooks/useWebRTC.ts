@@ -99,11 +99,23 @@ const useWebRTC = (
     ]);
   };
 
-  const addVideo = (stream: MediaStream) => {
+  const addStream = (stream: MediaStream) => {
     peer.current!.addStream(stream);
   };
 
-  return { connected, messages, sendMessage, addVideo, videoRef, peerVideo };
+  const removeStream = (stream: MediaStream) => {
+    peer.current!.removeStream(stream);
+  };
+
+  return {
+    connected,
+    messages,
+    sendMessage,
+    addStream,
+    removeStream,
+    videoRef,
+    peerVideo
+  };
 };
 
 export { useWebRTC };

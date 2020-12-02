@@ -95,7 +95,8 @@ export const ChatDraggable = ({
     connected,
     messages,
     sendMessage,
-    addVideo,
+    addStream,
+    removeStream,
     videoRef,
     peerVideo
   } = useWebRTC(id, initiator, close, initialSignal);
@@ -160,7 +161,9 @@ export const ChatDraggable = ({
       </MessageBoxInput>
       <br />
       <br />
-      {video ? <Video self muted addVideo={addVideo} /> : null}
+      {video ? (
+        <Video self muted addStream={addStream} removeStream={removeStream} />
+      ) : null}
     </>
   );
 

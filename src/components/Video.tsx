@@ -5,11 +5,12 @@ type VideoProps = {
   style?: object;
   self?: boolean;
   muted?: boolean;
-  addVideo?: Function;
+  addStream?: Function;
+  removeStream?: Function;
 };
 
 const Video = React.forwardRef<HTMLVideoElement, VideoProps>(
-  ({ style, self, muted, addVideo }: VideoProps, ref) => {
+  ({ style, self, muted, addStream, removeStream }: VideoProps, ref) => {
     const vidRef = useRef<HTMLVideoElement>();
     useEffect(() => {
       const connectVideo = async () => {
@@ -18,12 +19,15 @@ const Video = React.forwardRef<HTMLVideoElement, VideoProps>(
           audio: true
         });
         vidRef.current!.srcObject = stream;
-        if (addVideo) addVideo(stream);
+        if (addStream) addStream(stream);
       };
+
+      const vidRefCopy = vidRef.current;
       if (self) connectVideo();
       return () => {
-        if (vidRef.current) {
-          const stream = vidRef.current.srcObject as MediaStream;
+        if (vidRefCopy) {
+          const stream = vidRefCopy.srcObject as MediaStream;
+          if (removeStream) removeStream(stream);
           if (stream) {
             const tracks = stream.getTracks();
 
@@ -31,8 +35,6 @@ const Video = React.forwardRef<HTMLVideoElement, VideoProps>(
               track.stop();
             });
           }
-
-          vidRef.current.srcObject = null;
         }
       };
     }, [
