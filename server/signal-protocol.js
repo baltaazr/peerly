@@ -8,7 +8,7 @@ const handler = async ({ connection, stream }, io) => {
       for await (const message of source) {
         io.emit('rtc', {
           id: connection.remotePeer.toB58String(),
-          signal: message
+          signal: String(message)
         });
       }
     });

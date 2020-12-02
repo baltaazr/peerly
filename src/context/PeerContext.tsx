@@ -38,6 +38,8 @@ const PeerContextProvider = ({
   const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
   const signalFunctions = useRef<{ [id: string]: Function }>({});
 
+  console.log(draggables);
+
   useEffect(() => {
     socket.current = io('http://localhost:5000', {
       transports: ['websocket']
@@ -74,16 +76,24 @@ const PeerContextProvider = ({
                   setDraggables((prevDraggables) => [
                     ...prevDraggables,
                     <ChatDraggable
+                      close={() => {
+                        setDraggables((pD) =>
+                          pD.filter(({ props }) => id !== props.id)
+                        );
+                      }}
                       id={id}
                       initiator={false}
                       initialSignal={signal}
                     />
                   ]);
+                  notification.close(id);
                 }}
               >
                 Connect
               </Button>
-            )
+            ),
+            duration: 0,
+            key: id
           });
         else signalFunctions.current[id](signal);
       }
@@ -99,7 +109,13 @@ const PeerContextProvider = ({
   const connect = (id: string) => {
     setDraggables((prevDraggables) => [
       ...prevDraggables,
-      <ChatDraggable id={id} initiator={true} />
+      <ChatDraggable
+        id={id}
+        initiator={true}
+        close={() => {
+          setDraggables((pD) => pD.filter(({ props }) => id !== props.id));
+        }}
+      />
     ]);
   };
 

@@ -3,10 +3,14 @@ import { PeerContext } from '../context';
 import { useEffect, useRef, useContext, useState } from 'react';
 import Peer from 'simple-peer';
 
-const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
+const useWebRTC = (
+  id: string,
+  initiator: boolean,
+  close: Function,
+  initialSignal?: string
+) => {
+  const [connected, setConnected] = useState<boolean>(false);
   const peer = useRef<Peer.Instance>();
-  const connected = useRef<boolean>(false);
-  const disconnect = useRef<boolean>();
 
   const [messages, setMessages] = useState<
     {
@@ -22,11 +26,6 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
     addSignalFunc(id, (signal: string) => {
       peer.current!.signal(JSON.parse(signal));
     });
-
-    return () => {
-      disconnect.current = true;
-      if (peer.current) peer.current.destroy();
-    };
   }, []);
 
   const buildPeer = () => {
@@ -54,11 +53,14 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
       sendSignal(id, JSON.stringify(signal));
     });
 
-    newPeer.on('data', (message: string) => {
-      connected.current = true;
+    newPeer.on('connect', () => {
+      setConnected(true);
+    });
+
+    newPeer.on('data', (message: Uint8Array) => {
       setMessages((prevMessages) => [
         ...prevMessages,
-        { sender: false, content: message }
+        { sender: false, content: new TextDecoder('utf-8').decode(message) }
       ]);
     });
 
@@ -68,14 +70,9 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
 
     if (initialSignal) newPeer.signal(JSON.parse(initialSignal));
 
-    // newPeer.on('close', () => {
-    //   if (disconnect.current) return;
-    //   socket.current!.off('rtc');
-    //   peer.current = buildPeer();
-    //   socket.current!.on('rtc', (signal: string) => {
-    //     if (peer.current) peer.current.signal(signal);
-    //   });
-    // });
+    newPeer.on('close', () => {
+      close();
+    });
 
     return newPeer;
   };

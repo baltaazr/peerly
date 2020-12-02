@@ -8,6 +8,7 @@ import { useWebRTC } from '../hooks';
 type ChatDraggableProps = {
   id: string;
   initiator: boolean;
+  close: Function;
   initialSignal?: string;
 };
 
@@ -84,11 +85,13 @@ const { Text } = Typography;
 export const ChatDraggable = ({
   id,
   initiator,
+  close,
   initialSignal
 }: ChatDraggableProps) => {
   const { connected, messages, sendMessage } = useWebRTC(
     id,
     initiator,
+    close,
     initialSignal
   );
   const [input, setInput] = useState<string>('');
@@ -147,11 +150,7 @@ export const ChatDraggable = ({
   return (
     <Draggable defaultPosition={{ x: 100, y: 100 }}>
       <StyledCard title={id}>
-        {connected.current ? (
-          chatNode
-        ) : (
-          <Text type='secondary'>Connecting...</Text>
-        )}
+        {connected ? chatNode : <Text type='secondary'>Connecting...</Text>}
       </StyledCard>
     </Draggable>
   );
