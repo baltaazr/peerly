@@ -187,16 +187,20 @@ const main = async (server) => {
     });
 
     socket.on('rtc', async ({ id, signal }) => {
-      const connection = libp2p.connectionManager.get(id);
+      libp2p.peerStore.peers.forEach(async (peerData) => {
+        if (peerData.id.toB58String() === id) {
+          const connection = libp2p.connectionManager.get(peerData.id);
 
-      try {
-        const { stream } = await connection.newStream([
-          SignalProtocol.PROTOCOL
-        ]);
-        await SignalProtocol.send(signal, stream);
-      } catch (err) {
-        error('Could not negotiate protocol stream with peer', err);
-      }
+          try {
+            const { stream } = await connection.newStream([
+              SignalProtocol.PROTOCOL
+            ]);
+            await SignalProtocol.send(signal, stream);
+          } catch (err) {
+            error('Could not negotiate protocol stream with peer', err);
+          }
+        }
+      });
     });
   });
 

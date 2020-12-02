@@ -5,7 +5,7 @@ import Peer from 'simple-peer';
 
 const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
   const peer = useRef<Peer.Instance>();
-  const connected = useRef<boolean>();
+  const connected = useRef<boolean>(false);
   const disconnect = useRef<boolean>();
 
   const [messages, setMessages] = useState<
@@ -20,7 +20,7 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
   useEffect(() => {
     peer.current = buildPeer();
     addSignalFunc(id, (signal: string) => {
-      peer.current!.signal(signal);
+      peer.current!.signal(JSON.parse(signal));
     });
 
     return () => {
@@ -32,6 +32,7 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
   const buildPeer = () => {
     let config: object = {
       initiator: true,
+      trickle: false,
       config: {
         iceServers: [
           {
@@ -49,8 +50,8 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
 
     const newPeer = new Peer(config);
 
-    newPeer.on('signal', (signal: string) => {
-      sendSignal(id, signal);
+    newPeer.on('signal', (signal: object) => {
+      sendSignal(id, JSON.stringify(signal));
     });
 
     newPeer.on('data', (message: string) => {
@@ -65,7 +66,7 @@ const useWebRTC = (id: string, initiator: boolean, initialSignal?: string) => {
       console.error(err.code);
     });
 
-    if (initialSignal) newPeer.signal(initialSignal);
+    if (initialSignal) newPeer.signal(JSON.parse(initialSignal));
 
     // newPeer.on('close', () => {
     //   if (disconnect.current) return;

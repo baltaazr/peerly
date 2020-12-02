@@ -147,7 +147,11 @@ export const ChatDraggable = ({
   return (
     <Draggable defaultPosition={{ x: 100, y: 100 }}>
       <StyledCard title={id}>
-        {connected ? chatNode : <Text type='secondary'>Connecting...</Text>}
+        {connected.current ? (
+          chatNode
+        ) : (
+          <Text type='secondary'>Connecting...</Text>
+        )}
       </StyledCard>
     </Draggable>
   );
