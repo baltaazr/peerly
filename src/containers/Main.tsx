@@ -13,17 +13,11 @@ export const Main = () => {
 
   return (
     <>
-      <ChatDraggable
-        id={'123'}
-        messages={[
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' }
-        ]}
-      />
       <div style={{ width: 500, marginLeft: 'auto', marginRight: 'auto' }}>
         <Button
           style={{ position: 'absolute', top: 10, left: 10 }}
           onClick={mine}
+          type='primary'
         >
           Mine
         </Button>
@@ -110,6 +104,23 @@ export const Main = () => {
           </Form>
         </Modal>
       </div>
+      <ChatDraggable
+        id={'123'}
+        messages={[
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
+          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
+          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
+          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
+          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
+          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' }
+        ]}
+      />
     </>
   );
 };
