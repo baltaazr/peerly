@@ -44,7 +44,10 @@ const Video = React.forwardRef<HTMLVideoElement, VideoProps>(
     return (
       <video
         ref={mergeRefs([ref, vidRef])}
-        style={{ width: '100%', ...style }}
+        style={{
+          width: '100%',
+          ...style
+        }}
         playsInline
         autoPlay
         muted={muted}

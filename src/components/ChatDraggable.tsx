@@ -91,20 +91,26 @@ export const ChatDraggable = ({
   close,
   initialSignal
 }: ChatDraggableProps) => {
-  const { connected, messages, sendMessage, addVideo, videoRef } = useWebRTC(
-    id,
-    initiator,
-    close,
-    initialSignal
-  );
+  const {
+    connected,
+    messages,
+    sendMessage,
+    addVideo,
+    videoRef,
+    peerVideo
+  } = useWebRTC(id, initiator, close, initialSignal);
   const [input, setInput] = useState<string>('');
   const [video, setVideo] = useState<boolean>(false);
 
   const chatNode = (
     <>
-      <Video ref={videoRef} />
-      <br />
-      <br />
+      {peerVideo ? (
+        <>
+          <Video ref={videoRef} />
+          <br />
+          <br />
+        </>
+      ) : null}
       <ScrollBox>
         {messages.map(({ sender, content }, idx) => {
           if (sender) {
@@ -174,7 +180,7 @@ export const ChatDraggable = ({
           <TransactionOutlined />,
           <VideoCameraOutlined
             onClick={() => {
-              setVideo(true);
+              setVideo((prevVal) => !prevVal);
             }}
           />
         ]}
