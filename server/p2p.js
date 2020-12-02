@@ -166,7 +166,7 @@ const main = async (server) => {
         socket.emit('notification', 'Mining in progress');
       }
       worker = new Worker('./server/Blockchain/mine.js');
-      worker.on('close', () => {
+      worker.on('exit', () => {
         socket.emit('notification', 'Block has been successfully mined!');
         const blockchain = read_blockchain();
         libp2p.peerStore.peers.forEach(async (peerData) => {

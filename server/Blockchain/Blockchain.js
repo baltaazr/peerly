@@ -82,10 +82,10 @@ class Blockchain {
     return block.compute_hash().startsWith('0'.repeat(Blockchain.difficulty));
   }
 
-  check_chain_validity(chain) {
+  check_chain_validity() {
     let result = true;
     let previous_hash = '0';
-    chain.forEach((block) => {
+    this.chain.forEach((block) => {
       //remove the hash field to recompute the hash again
       //using `compute_hash` method.
       if (
