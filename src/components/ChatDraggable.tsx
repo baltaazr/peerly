@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Draggable from 'react-draggable';
 import styled from 'styled-components';
-import { Card, Typography } from 'antd';
+import { Card, Typography, Modal, Form, InputNumber, Button } from 'antd';
 import {
   CloseOutlined,
   TransactionOutlined,
@@ -16,6 +16,7 @@ type ChatDraggableProps = {
   initiator: boolean;
   close: Function;
   initialSignal?: string;
+  sendTransaction: Function;
 };
 
 const StyledCard = styled(Card)`
@@ -89,7 +90,8 @@ export const ChatDraggable = ({
   id,
   initiator,
   close,
-  initialSignal
+  initialSignal,
+  sendTransaction
 }: ChatDraggableProps) => {
   const {
     connected,
@@ -102,6 +104,7 @@ export const ChatDraggable = ({
   } = useWebRTC(id, initiator, close, initialSignal);
   const [input, setInput] = useState<string>('');
   const [video, setVideo] = useState<boolean>(false);
+  const [modal, setModal] = useState<boolean>(false);
 
   const chatNode = (
     <>
@@ -121,7 +124,10 @@ export const ChatDraggable = ({
             if (idx < messages.length - 1 && messages[idx + 1].sender)
               bot = true;
             return (
-              <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+              <div
+                style={{ display: 'flex', flexDirection: 'row-reverse' }}
+                key={idx}
+              >
                 <MessageBox sender topRight={top} botRight={bot}>
                   {content}
                 </MessageBox>
@@ -134,7 +140,7 @@ export const ChatDraggable = ({
             if (idx < messages.length - 1 && !messages[idx + 1].sender)
               bot = true;
             return (
-              <div style={{ display: 'flex', flexDirection: 'row' }}>
+              <div style={{ display: 'flex', flexDirection: 'row' }} key={idx}>
                 <MessageBox sender={false} topLeft={top} botLeft={bot}>
                   {content}
                 </MessageBox>
@@ -164,6 +170,47 @@ export const ChatDraggable = ({
       {video ? (
         <Video self muted addStream={addStream} removeStream={removeStream} />
       ) : null}
+      <Modal
+        title={`Transaction to ${id}`}
+        visible={modal}
+        footer={[]}
+        onCancel={() => {
+          setModal(false);
+        }}
+      >
+        <Form
+          name='transaction'
+          onFinish={({ amount }) => {
+            sendTransaction(amount, id);
+            setModal(false);
+          }}
+        >
+          <Form.Item
+            label='Amount'
+            name='amount'
+            rules={[
+              () => ({
+                required: true,
+                validator(_, value) {
+                  if (value && value > 0) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    'Please enter an amount greater than zero!'
+                  );
+                }
+              })
+            ]}
+          >
+            <InputNumber />
+          </Form.Item>
+          <Form.Item>
+            <Button type='primary' htmlType='submit'>
+              Send
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </>
   );
 
@@ -180,7 +227,11 @@ export const ChatDraggable = ({
           />
         }
         actions={[
-          <TransactionOutlined />,
+          <TransactionOutlined
+            onClick={() => {
+              setModal(true);
+            }}
+          />,
           <VideoCameraOutlined
             onClick={() => {
               setVideo((prevVal) => !prevVal);

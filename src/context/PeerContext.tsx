@@ -77,6 +77,7 @@ const PeerContextProvider = ({
               initiator={false}
               initialSignal={signal}
               key={id}
+              sendTransaction={sendTransaction}
             />
           ]);
         else signalFunctions.current[id]!(signal);
@@ -100,6 +101,7 @@ const PeerContextProvider = ({
           setDraggables((pD) => pD.filter(({ props }) => id !== props.id));
         }}
         key={id}
+        sendTransaction={sendTransaction}
       />
     ]);
   };
