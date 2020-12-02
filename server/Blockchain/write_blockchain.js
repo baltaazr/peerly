@@ -1,5 +1,5 @@
 const fs = require('fs');
 
 module.exports = (blockchain) => {
-  fs.writeFileSync('./server/Blockchain/ledger.json', blockchain.json);
+  fs.writeFileSync('ledger.json', blockchain.json);
 };

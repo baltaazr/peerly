@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import App from './App';
 import { PeerContextProvider } from './context';
+import 'antd/dist/antd.css';
+import './index.css';
 
 ReactDOM.render(
   <PeerContextProvider>
