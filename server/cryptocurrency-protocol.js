@@ -12,7 +12,7 @@ const error = console.error;
 
 const LEDGER_PROTOCOL = '/cryptocurrency/ledger/1.0.0';
 
-const ledger_handler = async ({ stream }) => {
+const ledger_handler = async ({ stream }, io) => {
   try {
     await pipe(stream, async (source) => {
       for await (const message of source) {
@@ -26,6 +26,7 @@ const ledger_handler = async ({ stream }) => {
         ) {
           write_blockchain(blockchain);
           log(chalk.yellowBright('📒  New ledger loaded!'));
+          io.emit('notification', 'New ledger loaded!');
           //TO DO: Add mechanism to stop mining if in progress
         }
       }
@@ -49,7 +50,7 @@ const ledger_send = async (message, stream) => {
 
 const TRANSACTION_PROTOCOL = '/cryptocurrency/transaction/1.0.0';
 
-const transaction_handler = async ({ connection, stream }) => {
+const transaction_handler = async ({ connection, stream }, io) => {
   try {
     await pipe(stream, async (source) => {
       for await (const message of source) {
@@ -82,6 +83,7 @@ const transaction_handler = async ({ connection, stream }) => {
           blockchain.add_new_transaction(transaction);
           write_blockchain(blockchain);
           log(chalk.yellowBright('💸  New transaction loaded!'));
+          io.emit('notification', 'New transaction loaded!');
         } catch (err) {
           log(chalk.red('Error loading transaction!'));
         }

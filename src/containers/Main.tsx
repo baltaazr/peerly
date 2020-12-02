@@ -1,15 +1,21 @@
 import React, { useContext, useState } from 'react';
 import { Typography, List, Modal, Button, Form, InputNumber } from 'antd';
+import styled from 'styled-components';
 
 import { ChatDraggable } from '../components';
 import { PeerContext } from '../context';
+
+const StyledListItem = styled(List.Item)`
+  cursor: pointer;
+`;
 
 export const Main = () => {
   const [modal, setModal] = useState<
     { id: string; type: 'main' | 'transaction' } | undefined
   >(undefined);
-  const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
-  const { peers, sendTransaction, mine } = useContext(PeerContext);
+  const { peers, sendTransaction, mine, connect, draggables } = useContext(
+    PeerContext
+  );
 
   return (
     <>
@@ -27,41 +33,15 @@ export const Main = () => {
           bordered
           dataSource={peers}
           renderItem={(peer) => (
-            <List.Item
+            <StyledListItem
               onClick={() => {
-                setModal({ id: peer.id, type: 'main' });
+                connect(peer.id);
               }}
             >
               <List.Item.Meta title={peer.id} />
-            </List.Item>
+            </StyledListItem>
           )}
         />
-        <Modal
-          title={(modal && modal.id) || ''}
-          visible={modal && modal.type === 'main'}
-          onCancel={() => {
-            setModal(undefined);
-          }}
-          footer={[
-            <Button
-              key='transaction'
-              type='primary'
-              onClick={() => {
-                setModal({ id: modal!.id, type: 'transaction' });
-              }}
-            >
-              Send VectorCoin
-            </Button>,
-            <Button type='primary' key='chat' onClick={() => {}}>
-              Chat
-            </Button>,
-            <Button type='primary' key='videochat' onClick={() => {}}>
-              Videochat
-            </Button>
-          ]}
-        >
-          <p>Connect with this peer through various forms</p>
-        </Modal>
         <Modal
           title={(modal && modal.id) || ''}
           visible={modal && modal.type === 'transaction'}
@@ -104,23 +84,7 @@ export const Main = () => {
           </Form>
         </Modal>
       </div>
-      <ChatDraggable
-        id={'123'}
-        messages={[
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:00 AM', sender: true, content: 'hello!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' },
-          { timestamp: '12:01 AM', sender: false, content: 'hello to you!' }
-        ]}
-      />
+      {draggables}
     </>
   );
 };

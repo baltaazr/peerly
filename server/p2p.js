@@ -57,20 +57,21 @@ const main = async (server) => {
   });
 
   let worker;
+  let io;
 
   const handler = (arg) => {
     const protocol = arg.protocol;
 
     switch (protocol) {
       case SignalProtocol.PROTOCOL:
-        SignalProtocol.handler(arg);
+        SignalProtocol.handler(arg, io);
         break;
       case CryptocurrencyProtocol.ledger.PROTOCOL:
-        CryptocurrencyProtocol.ledger.handler(arg);
+        CryptocurrencyProtocol.ledger.handler(arg, io);
         if (worker) worker.terminate();
         break;
       case CryptocurrencyProtocol.transaction.PROTOCOL:
-        CryptocurrencyProtocol.transaction.handler(arg);
+        CryptocurrencyProtocol.transaction.handler(arg, io);
         break;
       default:
         error('Protocol not supported');
@@ -87,7 +88,7 @@ const main = async (server) => {
     handler
   );
 
-  const io = sio(server);
+  io = sio(server);
 
   const checkPeer = ({ protocols, id }, connected = true) => {
     if (!protocols) return false;
@@ -151,7 +152,7 @@ const main = async (server) => {
             stream
           );
         } catch (err) {
-          error('Could not negotiate chat protocol stream with peer', err);
+          error('Could not negotiate protocol stream with peer', err);
         }
       });
     });
@@ -179,10 +180,23 @@ const main = async (server) => {
             ]);
             await CryptocurrencyProtocol.ledger.send(blockchain.json, stream);
           } catch (err) {
-            error('Could not negotiate chat protocol stream with peer', err);
+            error('Could not negotiate protocol stream with peer', err);
           }
         });
       });
+    });
+
+    socket.on('rtc', async ({ id, signal }) => {
+      const connection = libp2p.connectionManager.get(id);
+
+      try {
+        const { stream } = await connection.newStream([
+          SignalProtocol.PROTOCOL
+        ]);
+        await SignalProtocol.send(signal, stream);
+      } catch (err) {
+        error('Could not negotiate protocol stream with peer', err);
+      }
     });
   });
 

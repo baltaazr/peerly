@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Draggable from 'react-draggable';
 import styled from 'styled-components';
-import { Card } from 'antd';
-import PerfectScrollbar from 'react-perfect-scrollbar';
-import e from 'express';
+import { Card, Typography } from 'antd';
+
+import { useWebRTC } from '../hooks';
 
 type ChatDraggableProps = {
-  messages: { timestamp: string; sender: boolean; content: string }[];
   id: string;
+  initiator: boolean;
+  initialSignal?: string;
 };
 
 const StyledCard = styled(Card)`
@@ -78,44 +79,75 @@ const ScrollBox = styled.div`
   }
 `;
 
-export const ChatDraggable = ({ messages, id }: ChatDraggableProps) => {
+const { Text } = Typography;
+
+export const ChatDraggable = ({
+  id,
+  initiator,
+  initialSignal
+}: ChatDraggableProps) => {
+  const { connected, messages, sendMessage } = useWebRTC(
+    id,
+    initiator,
+    initialSignal
+  );
+  const [input, setInput] = useState<string>('');
+
+  const chatNode = (
+    <>
+      <ScrollBox>
+        {messages.map(({ sender, content }, idx) => {
+          if (sender) {
+            let top = false,
+              bot = false;
+            if (idx > 0 && messages[idx - 1].sender) top = true;
+            if (idx < messages.length - 1 && messages[idx + 1].sender)
+              bot = true;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+                <MessageBox sender topRight={top} botRight={bot}>
+                  {content}
+                </MessageBox>
+              </div>
+            );
+          } else {
+            let top = false,
+              bot = false;
+            if (idx > 0 && !messages[idx - 1].sender) top = true;
+            if (idx < messages.length - 1 && !messages[idx + 1].sender)
+              bot = true;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'row' }}>
+                <MessageBox sender={false} topLeft={top} botLeft={bot}>
+                  {content}
+                </MessageBox>
+              </div>
+            );
+          }
+        })}
+      </ScrollBox>
+      <MessageBoxInput sender={false}>
+        <MessageInput
+          placeholder='Type a message...'
+          onKeyDown={(e) => {
+            if (e.keyCode === 13 && input.length > 0) {
+              sendMessage(input);
+              setInput('');
+            }
+          }}
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+          }}
+        />
+      </MessageBoxInput>
+    </>
+  );
+
   return (
     <Draggable defaultPosition={{ x: 100, y: 100 }}>
       <StyledCard title={id}>
-        <ScrollBox>
-          {messages.map(({ sender, content }, idx) => {
-            if (sender) {
-              let top = false,
-                bot = false;
-              if (idx > 0 && messages[idx - 1].sender) top = true;
-              if (idx < messages.length - 1 && messages[idx + 1].sender)
-                bot = true;
-              return (
-                <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
-                  <MessageBox sender topRight={top} botRight={bot}>
-                    {content}
-                  </MessageBox>
-                </div>
-              );
-            } else {
-              let top = false,
-                bot = false;
-              if (idx > 0 && !messages[idx - 1].sender) top = true;
-              if (idx < messages.length - 1 && !messages[idx + 1].sender)
-                bot = true;
-              return (
-                <div style={{ display: 'flex', flexDirection: 'row' }}>
-                  <MessageBox sender={false} topLeft={top} botLeft={bot}>
-                    {content}
-                  </MessageBox>
-                </div>
-              );
-            }
-          })}
-        </ScrollBox>
-        <MessageBoxInput sender={false}>
-          <MessageInput placeholder='Type a message...' />
-        </MessageBoxInput>
+        {connected ? chatNode : <Text type='secondary'>Connecting...</Text>}
       </StyledCard>
     </Draggable>
   );

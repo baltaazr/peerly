@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { notification } from 'antd';
+import { notification, Button } from 'antd';
+
+import { ChatDraggable } from '../components';
 
 export type Peer = {
   id: string;
@@ -10,12 +12,20 @@ type PeerContextProps = {
   peers: Peer[];
   sendTransaction: (amount: number, receiver: string) => void;
   mine: () => void;
+  addSignalFunc: (id: string, func: Function) => void;
+  sendSignal: (id: string, signal: string) => void;
+  connect: (id: string) => void;
+  draggables: React.ReactElement[];
 };
 
 export const PeerContext = React.createContext<PeerContextProps>({
   peers: [],
   sendTransaction: (amount: number, receiver: string) => {},
-  mine: () => {}
+  mine: () => {},
+  addSignalFunc: (id: string, func: Function) => {},
+  sendSignal: (id: string, signal: string) => {},
+  connect: (id: string) => {},
+  draggables: []
 });
 
 const PeerContextProvider = ({
@@ -25,6 +35,8 @@ const PeerContextProvider = ({
 }) => {
   const [peers, setPeers] = useState<Peer[]>([]);
   const socket = useRef<Socket | undefined>(undefined);
+  const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
+  const signalFunctions = useRef<{ [id: string]: Function }>({});
 
   useEffect(() => {
     socket.current = io('http://localhost:5000', {
@@ -47,12 +59,49 @@ const PeerContextProvider = ({
       setPeers((prevPeers) => prevPeers.filter(({ id }) => id !== data));
     });
 
+    socket.current.on(
+      'rtc',
+      ({ id, signal }: { id: string; signal: string }) => {
+        if (!signalFunctions.current[id])
+          notification.open({
+            message: 'A new connection',
+            description: `${id} wants to connect with you`,
+            btn: (
+              <Button
+                type='primary'
+                size='small'
+                onClick={() => {
+                  setDraggables((prevDraggables) => [
+                    ...prevDraggables,
+                    <ChatDraggable
+                      id={id}
+                      initiator={false}
+                      initialSignal={signal}
+                    />
+                  ]);
+                }}
+              >
+                Connect
+              </Button>
+            )
+          });
+        else signalFunctions.current[id](signal);
+      }
+    );
+
     socket.current.on('notification', (message: string) => {
       notification.open({
         message
       });
     });
   }, []);
+
+  const connect = (id: string) => {
+    setDraggables((prevDraggables) => [
+      ...prevDraggables,
+      <ChatDraggable id={id} initiator={true} />
+    ]);
+  };
 
   const sendTransaction = (amount: number, receiver: string) => {
     socket.current!.emit('transaction', { amount, receiver });
@@ -62,8 +111,26 @@ const PeerContextProvider = ({
     socket.current!.emit('mine');
   };
 
+  const addSignalFunc = (id: string, func: Function) => {
+    signalFunctions.current![id] = func;
+  };
+
+  const sendSignal = (id: string, signal: string) => {
+    socket.current!.emit('rtc', { id, signal });
+  };
+
   return (
-    <PeerContext.Provider value={{ peers, sendTransaction, mine }}>
+    <PeerContext.Provider
+      value={{
+        peers,
+        sendTransaction,
+        mine,
+        addSignalFunc,
+        sendSignal,
+        connect,
+        draggables
+      }}
+    >
       {children}
     </PeerContext.Provider>
   );
