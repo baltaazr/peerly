@@ -19,13 +19,20 @@ const useWebRTC = (
     }[]
   >([]);
 
-  const { addSignalFunc, sendSignal } = useContext(PeerContext);
+  const { addSignalFunc, removeSignalFunc, sendSignal } = useContext(
+    PeerContext
+  );
 
   useEffect(() => {
     peer.current = buildPeer();
     addSignalFunc(id, (signal: string) => {
       peer.current!.signal(JSON.parse(signal));
     });
+
+    return () => {
+      peer.current!.destroy();
+      removeSignalFunc(id);
+    };
   }, []);
 
   const buildPeer = () => {
