@@ -13,6 +13,7 @@ type PeerContextProps = {
   sendTransaction: (amount: number, receiver: string) => void;
   mine: () => void;
   addSignalFunc: (id: string, func: Function) => void;
+  removeSignalFunc: (id: string) => void;
   sendSignal: (id: string, signal: string) => void;
   connect: (id: string) => void;
   draggables: React.ReactElement[];
@@ -23,6 +24,7 @@ export const PeerContext = React.createContext<PeerContextProps>({
   sendTransaction: (amount: number, receiver: string) => {},
   mine: () => {},
   addSignalFunc: (id: string, func: Function) => {},
+  removeSignalFunc: (id: string) => {},
   sendSignal: (id: string, signal: string) => {},
   connect: (id: string) => {},
   draggables: []
@@ -36,7 +38,7 @@ const PeerContextProvider = ({
   const [peers, setPeers] = useState<Peer[]>([]);
   const socket = useRef<Socket | undefined>(undefined);
   const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
-  const signalFunctions = useRef<{ [id: string]: Function }>({});
+  const signalFunctions = useRef<{ [id: string]: Function | undefined }>({});
 
   useEffect(() => {
     socket.current = io('http://localhost:5000', {
@@ -77,7 +79,7 @@ const PeerContextProvider = ({
               key={id}
             />
           ]);
-        else signalFunctions.current[id](signal);
+        else signalFunctions.current[id]!(signal);
       }
     );
 
@@ -114,6 +116,10 @@ const PeerContextProvider = ({
     signalFunctions.current![id] = func;
   };
 
+  const removeSignalFunc = (id: string) => {
+    signalFunctions.current![id] = undefined;
+  };
+
   const sendSignal = (id: string, signal: string) => {
     socket.current!.emit('rtc', { id, signal });
   };
@@ -125,6 +131,7 @@ const PeerContextProvider = ({
         sendTransaction,
         mine,
         addSignalFunc,
+        removeSignalFunc,
         sendSignal,
         connect,
         draggables
