@@ -27,7 +27,9 @@ const Video = React.forwardRef<HTMLVideoElement, VideoProps>(
       return () => {
         if (vidRefCopy) {
           const stream = vidRefCopy.srcObject as MediaStream;
-          if (removeStream) removeStream(stream);
+          try {
+            if (removeStream) removeStream(stream);
+          } catch (err) {}
           if (stream) {
             const tracks = stream.getTracks();
 
