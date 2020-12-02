@@ -2,8 +2,14 @@ import React, { useState } from 'react';
 import Draggable from 'react-draggable';
 import styled from 'styled-components';
 import { Card, Typography } from 'antd';
+import {
+  CloseOutlined,
+  TransactionOutlined,
+  VideoCameraOutlined
+} from '@ant-design/icons';
 
 import { useWebRTC } from '../hooks';
+import { Video } from './Video';
 
 type ChatDraggableProps = {
   id: string;
@@ -14,7 +20,6 @@ type ChatDraggableProps = {
 
 const StyledCard = styled(Card)`
   position: relative;
-  height: 300px;
   width: 300px;
   background-color: white;
 `;
@@ -39,14 +44,12 @@ const MessageBox = styled.span<{
 `;
 
 const MessageBoxInput = styled(MessageBox)`
-  position: absolute;
-  margin: 0px;
-  bottom: 10px;
-  width: calc(100% - 48px);
+  width: 250px;
 `;
 
 const MessageInput = styled.input`
   background-color: rgb(241, 240, 240);
+  width: 224px;
   border: none;
 
   &:focus {
@@ -88,16 +91,20 @@ export const ChatDraggable = ({
   close,
   initialSignal
 }: ChatDraggableProps) => {
-  const { connected, messages, sendMessage } = useWebRTC(
+  const { connected, messages, sendMessage, addVideo, videoRef } = useWebRTC(
     id,
     initiator,
     close,
     initialSignal
   );
   const [input, setInput] = useState<string>('');
+  const [video, setVideo] = useState<boolean>(false);
 
   const chatNode = (
     <>
+      <Video ref={videoRef} />
+      <br />
+      <br />
       <ScrollBox>
         {messages.map(({ sender, content }, idx) => {
           if (sender) {
@@ -129,6 +136,7 @@ export const ChatDraggable = ({
           }
         })}
       </ScrollBox>
+      <br />
       <MessageBoxInput sender={false}>
         <MessageInput
           placeholder='Type a message...'
@@ -144,13 +152,40 @@ export const ChatDraggable = ({
           }}
         />
       </MessageBoxInput>
+      <br />
+      <br />
+      {video ? <Video self muted addVideo={addVideo} /> : null}
     </>
   );
 
   return (
     <Draggable defaultPosition={{ x: 100, y: 100 }}>
-      <StyledCard title={id}>
-        {connected ? chatNode : <Text type='secondary'>Connecting...</Text>}
+      <StyledCard
+        title={id}
+        extra={
+          <CloseOutlined
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              close();
+            }}
+          />
+        }
+        actions={[
+          <TransactionOutlined />,
+          <VideoCameraOutlined
+            onClick={() => {
+              setVideo(true);
+            }}
+          />
+        ]}
+      >
+        {connected ? (
+          chatNode
+        ) : (
+          <div style={{ height: 150 }}>
+            <Text type='secondary'>Connecting...</Text>
+          </div>
+        )}
       </StyledCard>
     </Draggable>
   );

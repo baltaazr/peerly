@@ -11,6 +11,7 @@ const useWebRTC = (
 ) => {
   const [connected, setConnected] = useState<boolean>(false);
   const peer = useRef<Peer.Instance>();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const [messages, setMessages] = useState<
     {
@@ -53,6 +54,8 @@ const useWebRTC = (
       sendSignal(id, JSON.stringify(signal));
     });
 
+    newPeer.on('stream', (stream) => {});
+
     newPeer.on('connect', () => {
       setConnected(true);
     });
@@ -85,7 +88,11 @@ const useWebRTC = (
     ]);
   };
 
-  return { connected, messages, sendMessage };
+  const addVideo = (stream: MediaStream) => {
+    peer.current!.addStream(stream);
+  };
+
+  return { connected, messages, sendMessage, addVideo, videoRef };
 };
 
 export { useWebRTC };

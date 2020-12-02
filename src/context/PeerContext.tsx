@@ -38,8 +38,6 @@ const PeerContextProvider = ({
   const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
   const signalFunctions = useRef<{ [id: string]: Function }>({});
 
-  console.log(draggables);
-
   useEffect(() => {
     socket.current = io('http://localhost:5000', {
       transports: ['websocket']
@@ -65,36 +63,20 @@ const PeerContextProvider = ({
       'rtc',
       ({ id, signal }: { id: string; signal: string }) => {
         if (!signalFunctions.current[id])
-          notification.open({
-            message: 'A new connection',
-            description: `${id} wants to connect with you`,
-            btn: (
-              <Button
-                type='primary'
-                size='small'
-                onClick={() => {
-                  setDraggables((prevDraggables) => [
-                    ...prevDraggables,
-                    <ChatDraggable
-                      close={() => {
-                        setDraggables((pD) =>
-                          pD.filter(({ props }) => id !== props.id)
-                        );
-                      }}
-                      id={id}
-                      initiator={false}
-                      initialSignal={signal}
-                    />
-                  ]);
-                  notification.close(id);
-                }}
-              >
-                Connect
-              </Button>
-            ),
-            duration: 0,
-            key: id
-          });
+          setDraggables((prevDraggables) => [
+            ...prevDraggables,
+            <ChatDraggable
+              close={() => {
+                setDraggables((pD) =>
+                  pD.filter(({ props }) => id !== props.id)
+                );
+              }}
+              id={id}
+              initiator={false}
+              initialSignal={signal}
+              key={id}
+            />
+          ]);
         else signalFunctions.current[id](signal);
       }
     );
@@ -115,6 +97,7 @@ const PeerContextProvider = ({
         close={() => {
           setDraggables((pD) => pD.filter(({ props }) => id !== props.id));
         }}
+        key={id}
       />
     ]);
   };
