@@ -1,4 +1,3 @@
-const { parentPort } = require('worker_threads');
 const chalk = require('chalk');
 
 const read_blockchain = require('./read_blockchain');
