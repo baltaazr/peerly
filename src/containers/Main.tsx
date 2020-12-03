@@ -8,8 +8,10 @@ const StyledListItem = styled(List.Item)`
   cursor: pointer;
 `;
 
+const { Title } = Typography;
+
 export const Main = () => {
-  const { peers, mine, connect, draggables } = useContext(PeerContext);
+  const { peers, wallet, mine, connect, draggables } = useContext(PeerContext);
 
   return (
     <>
@@ -21,7 +23,10 @@ export const Main = () => {
         >
           Mine
         </Button>
-        <Typography>Number of peers connected: {peers.length}</Typography>
+        <Title style={{ marginTop: 10 }} level={5}>
+          Wallet: {wallet} VectorCoins
+        </Title>
+        <Title level={5}>Number of peers connected: {peers.length}</Title>
         <List
           itemLayout='horizontal'
           bordered

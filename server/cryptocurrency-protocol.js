@@ -80,10 +80,22 @@ const transaction_handler = async ({ connection, stream }, io) => {
             throw Error();
 
           const blockchain = read_blockchain();
+          const senderWallet = blockchain.getWallet(
+            connection.remotepeer.toB58String()
+          );
+          if (senderWallet - transaction.amount < 0) throw Error();
+
           blockchain.add_new_transaction(transaction);
           write_blockchain(blockchain);
+
+          const peerId = await PeerId.createFromJSON(
+            require('../peer-id.json')
+          );
+          const wallet = blockchain.getWallet(peerId.toB58String());
+
           log(chalk.yellowBright('💸  New transaction loaded!'));
           io.emit('notification', 'New transaction loaded!');
+          io.emit('wallet', wallet);
         } catch (err) {
           log(chalk.red('Error loading transaction!'));
         }
@@ -99,9 +111,6 @@ const transaction_handler = async ({ connection, stream }, io) => {
 const transaction_send = async (message, stream) => {
   try {
     await pipe([message], stream, async () => {
-      const blockchain = read_blockchain();
-      blockchain.add_new_transaction(JSON.parse(String(message)));
-      write_blockchain(blockchain);
       log(chalk.yellowBright('💸  Transaction sent!'));
     });
   } catch (err) {

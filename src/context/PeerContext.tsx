@@ -10,6 +10,7 @@ export type Peer = {
 
 type PeerContextProps = {
   peers: Peer[];
+  wallet: number;
   sendTransaction: (amount: number, receiver: string) => void;
   mine: () => void;
   addSignalFunc: (id: string, func: Function) => void;
@@ -21,6 +22,7 @@ type PeerContextProps = {
 
 export const PeerContext = React.createContext<PeerContextProps>({
   peers: [],
+  wallet: 0,
   sendTransaction: (amount: number, receiver: string) => {},
   mine: () => {},
   addSignalFunc: (id: string, func: Function) => {},
@@ -36,6 +38,7 @@ const PeerContextProvider = ({
   children: React.ReactNode | React.ReactNode[];
 }) => {
   const [peers, setPeers] = useState<Peer[]>([]);
+  const [wallet, setWallet] = useState<number>(0);
   const socket = useRef<Socket | undefined>(undefined);
   const [draggables, setDraggables] = useState<React.ReactElement[]>([]);
   const signalFunctions = useRef<{ [id: string]: Function | undefined }>({});
@@ -47,6 +50,10 @@ const PeerContextProvider = ({
 
     socket.current.on('peers', (data: Peer[]) => {
       setPeers(data);
+    });
+
+    socket.current.on('wallet', (data: number) => {
+      setWallet(data);
     });
 
     socket.current.on('peer:connect', (data: Peer) => {
@@ -78,6 +85,7 @@ const PeerContextProvider = ({
               initialSignal={signal}
               key={id}
               sendTransaction={sendTransaction}
+              wallet={wallet}
             />
           ]);
         else signalFunctions.current[id]!(signal);
@@ -102,6 +110,7 @@ const PeerContextProvider = ({
         }}
         key={id}
         sendTransaction={sendTransaction}
+        wallet={wallet}
       />
     ]);
   };
@@ -130,6 +139,7 @@ const PeerContextProvider = ({
     <PeerContext.Provider
       value={{
         peers,
+        wallet,
         sendTransaction,
         mine,
         addSignalFunc,

@@ -5,7 +5,7 @@
       "index": 0,
       "transactions": [
         {
-          "sender": "Vector",
+          "sender": { "id": "Vector" },
           "receiver": "QmdGpDGqYHB4mThrv5jaQd73wxP75gJRw4Yvz75sXpJWQT",
           "amount": 100
         }

@@ -17,6 +17,7 @@ type ChatDraggableProps = {
   close: Function;
   initialSignal?: string;
   sendTransaction: Function;
+  wallet: number;
 };
 
 const StyledCard = styled(Card)`
@@ -91,7 +92,8 @@ export const ChatDraggable = ({
   initiator,
   close,
   initialSignal,
-  sendTransaction
+  sendTransaction,
+  wallet
 }: ChatDraggableProps) => {
   const {
     connected,
@@ -185,24 +187,8 @@ export const ChatDraggable = ({
             setModal(false);
           }}
         >
-          <Form.Item
-            label='Amount'
-            name='amount'
-            rules={[
-              () => ({
-                required: true,
-                validator(_, value) {
-                  if (value && value > 0) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(
-                    'Please enter an amount greater than zero!'
-                  );
-                }
-              })
-            ]}
-          >
-            <InputNumber />
+          <Form.Item label='Amount' name='amount'>
+            <InputNumber min={0} max={wallet} />
           </Form.Item>
           <Form.Item>
             <Button type='primary' htmlType='submit'>

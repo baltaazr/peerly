@@ -16,6 +16,7 @@ const SignalProtocol = require('./signal-protocol');
 const CryptocurrencyProtocol = require('./cryptocurrency-protocol');
 const Transaction = require('./Blockchain/Transaction');
 const read_blockchain = require('./Blockchain/read_blockchain');
+const write_blockchain = require('./Blockchain/write_blockchain');
 
 const log = console.log;
 const error = console.error;
@@ -132,11 +133,21 @@ const main = async (server) => {
 
     socket.emit('peers', peers);
 
+    const blockchain = read_blockchain();
+    const wallet = blockchain.getWallet(peerId.toB58String());
+    socket.emit('wallet', wallet);
+
     socket.on('transaction', ({ receiver, amount }) => {
       const sender = peerId.toJSON();
       delete sender.privKey;
       const transaction = new Transaction(sender, receiver, amount);
       transaction.sign(peerId.privKey._key);
+
+      const newBlockchain = read_blockchain();
+      newBlockchain.add_new_transaction(transaction);
+      write_blockchain(newBlockchain);
+      const newWallet = newBlockchain.getWallet(peerId.toB58String());
+      socket.emit('wallet', newWallet);
 
       libp2p.peerStore.peers.forEach(async (peerData) => {
         if (!checkPeer(peerData)) return;
@@ -166,9 +177,14 @@ const main = async (server) => {
         socket.emit('notification', 'Mining in progress');
       }
       worker = new Worker('./server/Blockchain/mine.js');
-      worker.on('exit', () => {
+      worker.on('exit', (exitCode) => {
+        if (exitCode === 1) {
+          socket.emit('notification', 'Mining stopped');
+          return;
+        }
+
         socket.emit('notification', 'Block has been successfully mined!');
-        const blockchain = read_blockchain();
+        const newBlockchain = read_blockchain();
         libp2p.peerStore.peers.forEach(async (peerData) => {
           if (!checkPeer(peerData)) return;
 
@@ -178,7 +194,10 @@ const main = async (server) => {
             const { stream } = await connection.newStream([
               CryptocurrencyProtocol.ledger.PROTOCOL
             ]);
-            await CryptocurrencyProtocol.ledger.send(blockchain.json, stream);
+            await CryptocurrencyProtocol.ledger.send(
+              newBlockchain.json,
+              stream
+            );
           } catch (err) {
             error('Could not negotiate protocol stream with peer', err);
           }

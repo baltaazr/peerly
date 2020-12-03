@@ -7,7 +7,7 @@ class Blockchain {
   }
 
   static get difficulty() {
-    return 2;
+    return 5;
   }
 
   load_chain({ unconfirmed_transactions, chain: newChain }) {
@@ -96,6 +96,19 @@ class Blockchain {
       }
       previous_hash = block.compute_hash();
     });
+    return result;
+  }
+
+  getWallet(id) {
+    let result = 0;
+    const transaction = ({ sender, receiver, amount }) => {
+      if (receiver === id) result += amount;
+      else if (sender.id === id) result -= amount;
+    };
+    this.chain.forEach((block) => {
+      block.transactions.forEach(transaction);
+    });
+    this.unconfirmed_transactions.forEach(transaction);
     return result;
   }
 

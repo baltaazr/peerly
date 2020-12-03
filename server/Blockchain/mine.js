@@ -11,4 +11,4 @@ log(chalk.yellow('⛏  Mining...'));
 blockchain.mine();
 log(chalk.green('✨  Block mined!'));
 write_blockchain(blockchain);
-parentPort.close();
+process.exit(2);
