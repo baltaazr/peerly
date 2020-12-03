@@ -81,7 +81,7 @@ const transaction_handler = async ({ connection, stream }, io) => {
 
           const blockchain = read_blockchain();
           const senderWallet = blockchain.getWallet(
-            connection.remotepeer.toB58String()
+            connection.remotePeer.toB58String()
           );
           if (senderWallet - transaction.amount < 0) throw Error();
 
