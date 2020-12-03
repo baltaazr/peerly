@@ -85,7 +85,6 @@ const PeerContextProvider = ({
               initialSignal={signal}
               key={id}
               sendTransaction={sendTransaction}
-              wallet={wallet}
             />
           ]);
         else signalFunctions.current[id]!(signal);
@@ -110,7 +109,6 @@ const PeerContextProvider = ({
         }}
         key={id}
         sendTransaction={sendTransaction}
-        wallet={wallet}
       />
     ]);
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import Draggable from 'react-draggable';
 import styled from 'styled-components';
 import { Card, Typography, Modal, Form, InputNumber, Button } from 'antd';
@@ -8,6 +8,7 @@ import {
   VideoCameraOutlined
 } from '@ant-design/icons';
 
+import { PeerContext } from '../context';
 import { useWebRTC } from '../hooks';
 import { Video } from './Video';
 
@@ -17,7 +18,6 @@ type ChatDraggableProps = {
   close: Function;
   initialSignal?: string;
   sendTransaction: Function;
-  wallet: number;
 };
 
 const StyledCard = styled(Card)`
@@ -92,8 +92,7 @@ export const ChatDraggable = ({
   initiator,
   close,
   initialSignal,
-  sendTransaction,
-  wallet
+  sendTransaction
 }: ChatDraggableProps) => {
   const {
     connected,
@@ -107,6 +106,8 @@ export const ChatDraggable = ({
   const [input, setInput] = useState<string>('');
   const [video, setVideo] = useState<boolean>(false);
   const [modal, setModal] = useState<boolean>(false);
+
+  const { wallet } = useContext(PeerContext);
 
   const chatNode = (
     <>
@@ -187,7 +188,23 @@ export const ChatDraggable = ({
             setModal(false);
           }}
         >
-          <Form.Item label='Amount' name='amount'>
+          <Form.Item
+            label='Amount'
+            name='amount'
+            rules={[
+              () => ({
+                required: true,
+                validator(_, value) {
+                  if (value && value > 0 && value <= wallet) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    'Please enter an amount greater than zero and not exceeding your wallet!'
+                  );
+                }
+              })
+            ]}
+          >
             <InputNumber min={0} max={wallet} />
           </Form.Item>
           <Form.Item>
