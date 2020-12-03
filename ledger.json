@@ -8,6 +8,11 @@
           "sender": { "id": "Vector" },
           "receiver": "QmdGpDGqYHB4mThrv5jaQd73wxP75gJRw4Yvz75sXpJWQT",
           "amount": 100
+        },
+        {
+          "sender": { "id": "Vector" },
+          "receiver": "QmdfqfGSj2uqQtW28LCwkkqBpn3Jj42vzFR9gMnBxErZhu",
+          "amount": 100
         }
       ],
       "previous_hash": "0",
