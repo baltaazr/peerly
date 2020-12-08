@@ -68,8 +68,7 @@ const main = async (server) => {
         SignalProtocol.handler(arg, io);
         break;
       case CryptocurrencyProtocol.ledger.PROTOCOL:
-        CryptocurrencyProtocol.ledger.handler(arg, io);
-        if (worker) worker.terminate();
+        CryptocurrencyProtocol.ledger.handler(arg, io, worker);
         break;
       case CryptocurrencyProtocol.transaction.PROTOCOL:
         CryptocurrencyProtocol.transaction.handler(arg, io);
@@ -176,7 +175,9 @@ const main = async (server) => {
       } else {
         socket.emit('notification', 'Mining in progress');
       }
-      worker = new Worker('./server/Blockchain/mine.js');
+      worker = new Worker('./server/Blockchain/mine.js', {
+        workerData: peerId.toB58String()
+      });
       worker.on('exit', (exitCode) => {
         if (exitCode === 1) {
           socket.emit('notification', 'Mining stopped');
@@ -185,6 +186,9 @@ const main = async (server) => {
 
         socket.emit('notification', 'Block has been successfully mined!');
         const newBlockchain = read_blockchain();
+        const newWallet = newBlockchain.getWallet(peerId.toB58String());
+        socket.emit('wallet', newWallet);
+
         libp2p.peerStore.peers.forEach(async (peerData) => {
           if (!checkPeer(peerData)) return;
 

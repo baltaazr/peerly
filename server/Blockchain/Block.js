@@ -1,11 +1,12 @@
 const crypto = require('crypto');
 
 class Block {
-  constructor(index, transactions, previous_hash, nonce = 0) {
+  constructor(index, transactions, previous_hash, miner = null, nonce = 0) {
     this.index = index;
     this.transactions = transactions;
     this.previous_hash = previous_hash;
     this.timestamp = new Date().getTime() / 1000;
+    this.miner = miner;
     this.nonce = nonce;
   }
 
@@ -23,11 +24,12 @@ class Block {
     return JSON.stringify(this);
   }
 
-  load_block({ index, transactions, previous_hash, timestamp, nonce }) {
+  load_block({ index, transactions, previous_hash, timestamp, miner, nonce }) {
     this.index = index;
     this.transactions = transactions;
     this.previous_hash = previous_hash;
     this.timestamp = timestamp;
+    this.miner = miner;
     this.nonce = nonce;
   }
 }

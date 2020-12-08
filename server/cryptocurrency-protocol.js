@@ -12,7 +12,7 @@ const error = console.error;
 
 const LEDGER_PROTOCOL = '/cryptocurrency/ledger/1.0.0';
 
-const ledger_handler = async ({ stream }, io) => {
+const ledger_handler = async ({ stream }, io, worker) => {
   try {
     await pipe(stream, async (source) => {
       for await (const message of source) {
@@ -24,10 +24,18 @@ const ledger_handler = async ({ stream }, io) => {
           result &&
           blockchain.chain.length > currentBlockchain.chain.length
         ) {
+          if (worker) worker.terminate();
+
           write_blockchain(blockchain);
+
+          const peerId = await PeerId.createFromJSON(
+            require('../peer-id.json')
+          );
+          const wallet = blockchain.getWallet(peerId.toB58String());
+
           log(chalk.yellowBright('📒  New ledger loaded!'));
           io.emit('notification', 'New ledger loaded!');
-          //TO DO: Add mechanism to stop mining if in progress
+          io.emit('wallet', wallet);
         }
       }
     });

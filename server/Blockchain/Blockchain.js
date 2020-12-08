@@ -10,6 +10,10 @@ class Blockchain {
     return 5;
   }
 
+  static get reward() {
+    return 10;
+  }
+
   load_chain({ unconfirmed_transactions, chain: newChain }) {
     this.unconfirmed_transactions = unconfirmed_transactions;
     this.chain = [];
@@ -107,12 +111,13 @@ class Blockchain {
     };
     this.chain.forEach((block) => {
       block.transactions.forEach(transaction);
+      if (block.miner === id) result += Blockchain.reward;
     });
     this.unconfirmed_transactions.forEach(transaction);
     return result;
   }
 
-  mine() {
+  mine(miner) {
     /*
     This function serves as an interface to add the pending
     transactions to the blockchain by adding them to the block
@@ -125,7 +130,8 @@ class Blockchain {
     const new_block = new Block(
       last_block.index + 1,
       this.unconfirmed_transactions,
-      last_block.compute_hash()
+      last_block.compute_hash(),
+      miner
     );
     Blockchain.proof_of_work(new_block);
     this.add_block(new_block);
